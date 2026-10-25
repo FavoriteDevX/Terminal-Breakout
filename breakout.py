@@ -10,10 +10,17 @@ if os.name == 'nt':
     kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
 
 # --- Game Configuration ---
-SCREEN_WIDTH = 60
+SCREEN_WIDTH = 62
 SCREEN_HEIGHT = 20
-PADDLE_WIDTH = 8
-FPS = 12
+PADDLE_WIDTH = 10
+FPS = 30  # High refresh rate for instant controls response
+
+# ANSI Color Codes
+RESET = "\033[0m"
+RED = "\033[31m"
+GREEN = "\033[32m"
+YELLOW = "\033[33m"
+CYAN = "\033[36m"
 
 def get_keyboard_input():
     """Non-blocking keyboard input listener for Windows and Linux/macOS"""
@@ -56,21 +63,31 @@ def main():
     paddle_y = SCREEN_HEIGHT - 2
 
     ball_x = SCREEN_WIDTH // 2
-    ball_y = SCREEN_HEIGHT // 3
+    ball_y = SCREEN_HEIGHT // 2
     ball_dx = random.choice([-1, 1])
-    ball_dy = 1
+    ball_dy = -1
 
-    # Generate bricks layer rows
+    # Generate distinct retro bricks layers with safe spacing
     bricks = []
-    for r in range(2, 5):
-        for c in range(2, SCREEN_WIDTH - 2, 2):
-            bricks.append([r, c])
-            bricks.append([r, c + 1])
+    brick_width = 6
+    
+    for row_idx, color in [(2, RED), (3, GREEN), (4, YELLOW)]:
+        for col_x in range(4, SCREEN_WIDTH - 6, brick_width):
+            bricks.append({
+                "y": row_idx, 
+                "x_start": col_x, 
+                "x_end": col_x + brick_width - 1, 
+                "color": color
+            })
 
     score = 0
     lives = 3
     game_over = False
     victory = False
+
+    # Frame decoupling counter for ball physics ticks
+    frame_count = 0
+    ball_speed_divider = 3 # Moves the ball every 3 frames, keeping controls fast
 
     # Hide the blinking terminal cursor
     sys.stdout.write("\033[?25l")
@@ -87,55 +104,73 @@ def main():
 
             if game_over:
                 buffer += "\n" * (SCREEN_HEIGHT // 2)
-                buffer += " " * ((SCREEN_WIDTH - 11) // 2) + "GAME OVER!!\n"
+                buffer += " " * ((SCREEN_WIDTH - 11) // 2) + RED + "GAME OVER!!" + RESET + "\n"
                 buffer += " " * ((SCREEN_WIDTH - 26) // 2) + "Press 'R' to Restart or 'Q'\n"
                 buffer += "\n" * (SCREEN_HEIGHT // 2 - 2)
             elif victory:
                 buffer += "\n" * (SCREEN_HEIGHT // 2)
-                buffer += " " * ((SCREEN_WIDTH - 13) // 2) + "YOU WIN!!!!\n"
+                buffer += " " * ((SCREEN_WIDTH - 13) // 2) + GREEN + "YOU WIN!!!!" + RESET + "\n"
                 buffer += " " * ((SCREEN_WIDTH - 26) // 2) + "Press 'R' to Restart or 'Q'\n"
                 buffer += "\n" * (SCREEN_HEIGHT // 2 - 2)
             else:
+                # Render screen line by line
                 for y in range(SCREEN_HEIGHT):
-                    for x in range(SCREEN_WIDTH):
+                    x = 0
+                    while x < SCREEN_WIDTH:
                         if x == 0 or x == SCREEN_WIDTH - 1 or y == 0 or y == SCREEN_HEIGHT - 1:
                             buffer += '#'
-                        elif [y, x] in bricks:
-                            buffer += '='
+                            x += 1
                         elif y == paddle_y and paddle_x <= x < paddle_x + PADDLE_WIDTH:
-                            buffer += '_'
+                            buffer += CYAN + "=" + RESET
+                            x += 1
                         elif y == ball_y and x == ball_x:
-                            buffer += 'O'
+                            buffer += "O"
+                            x += 1
                         else:
-                            buffer += ' '
+                            matched_brick = None
+                            for b in bricks:
+                                if b["y"] == y and b["x_start"] <= x <= b["x_end"]:
+                                    matched_brick = b
+                                    break
+                            
+                            if matched_brick:
+                                buffer += matched_brick["color"] + "[" + "=" * (brick_width - 2) + "]" + RESET
+                                x += brick_width
+                            else:
+                                buffer += ' '
+                                x += 1
                     buffer += '\n'
 
             sys.stdout.write(buffer)
             sys.stdout.flush()
             time.sleep(1.0 / FPS)
+            frame_count += 1
 
-            # Keyboard polling controller
+            # Keyboard polling controller (Runs at max FPS for absolute responsiveness)
             key = get_keyboard_input()
             if key == 'q':
                 break
             elif key == 'r':
                 paddle_x = (SCREEN_WIDTH - PADDLE_WIDTH) // 2
                 ball_x = SCREEN_WIDTH // 2
-                ball_y = SCREEN_HEIGHT // 3
+                ball_y = SCREEN_HEIGHT // 2
                 ball_dx = random.choice([-1, 1])
-                ball_dy = 1
-                bricks = [[r, c] for r in range(2, 5) for c in range(2, SCREEN_WIDTH - 2)]
+                ball_dy = -1
+                bricks = []
+                for row_idx, color in [(2, RED), (3, GREEN), (4, YELLOW)]:
+                    for col_x in range(4, SCREEN_WIDTH - 6, brick_width):
+                        bricks.append({"y": row_idx, "x_start": col_x, "x_end": col_x + brick_width - 1, "color": color})
                 score = 0
                 lives = 3
                 game_over = False
                 victory = False
             elif key in ('a', 'LEFT'):
-                if paddle_x > 1: paddle_x -= 2
+                if paddle_x > 1: paddle_x -= 3
             elif key in ('d', 'RIGHT'):
-                if paddle_x < SCREEN_WIDTH - PADDLE_WIDTH - 1: paddle_x += 2
+                if paddle_x < SCREEN_WIDTH - PADDLE_WIDTH - 1: paddle_x += 3
 
-            # Physics engine simulation updates
-            if not game_over and not victory:
+            # Decoupled Ball Physics Simulation Tick
+            if not game_over and not victory and (frame_count % ball_speed_divider == 0):
                 ball_x += ball_dx
                 ball_y += ball_dy
 
@@ -152,7 +187,7 @@ def main():
                     ball_y = 1
                     ball_dy *= -1
 
-                # Paddle collision hitboxes
+                # Paddle collision hitboxes detection
                 if ball_y == paddle_y:
                     if paddle_x <= ball_x < paddle_x + PADDLE_WIDTH:
                         ball_dy = -1
@@ -161,10 +196,10 @@ def main():
                         else:
                             ball_dx = 1
 
-                # Brick physics impact detection
-                for brick in bricks:
-                    if ball_y == brick[0] and ball_x == brick[1]:
-                        bricks.remove(brick)
+                # Robust bounding-box brick hit logic
+                for b in bricks:
+                    if ball_y == b["y"] and b["x_start"] <= ball_x <= b["x_end"]:
+                        bricks.remove(b)
                         ball_dy *= -1
                         score += 10
                         break
@@ -179,12 +214,12 @@ def main():
                         game_over = True
                     else:
                         ball_x = SCREEN_WIDTH // 2
-                        ball_y = SCREEN_HEIGHT // 3
+                        ball_y = SCREEN_HEIGHT // 2
                         ball_dx = random.choice([-1, 1])
-                        ball_dy = 1
+                        ball_dy = -1
                         paddle_x = (SCREEN_WIDTH - PADDLE_WIDTH) // 2
+                        time.sleep(1)
     finally:
-        # Show the cursor again when exiting the script execution context
         sys.stdout.write("\033[?25h\n")
         sys.stdout.flush()
 

@@ -28,5 +28,9 @@ No external package managers like `npm`, `node`, or `pip` are required!
 - **R**: Restart the game (available on *Game Over* or *Victory* screens)
 - **Q**: Instantly close and quit the game back to the terminal prompt
 
+<img width="619" height="466" alt="Screenshot 2026-10-25 165047" src="https://github.com/user-attachments/assets/1d2abefe-8a94-4a89-9614-8cf43f5454f7" />
+
+<img width="604" height="458" alt="Screenshot 2026-10-25 165103" src="https://github.com/user-attachments/assets/35433574-de42-42b4-b411-530b34d4c526" />
+
 ## Terminal Settings Note
 Before launching the script, please make sure your terminal window is scaled up to at least **80 columns by 25 rows** so the boundaries layout, score tracker, and retro frame buffer display correctly without text wrapping.

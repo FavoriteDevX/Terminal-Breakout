@@ -1,24 +1,32 @@
 # Terminal Breakout Game
 
-A fully playable, retro-style Breakout game built in Python that runs entirely inside your computer terminal. 
+A fully playable, lightweight, and zero-dependency **Breakout clone** made to run entirely inside your command-line interface. Written in pure Python using standard built-in modules.
 
-No external package managers like `npm`, `pip`, or `node` required! It uses Python's standard built-in `curses` module.
+This version features **decoupled game physics**, meaning your paddle movement is completely lag-free and instant, while the ball glides smoothly at an arcade pace. It also includes full retro ANSI terminal color support.
 
-## How to Play
+No external package managers like `npm`, `node`, or `pip` are required!
 
-1. **Clone or Copy the code:** Save the script as `breakout.py`.
-2. **Run the game:** Open your terminal and run:
+## Features
+- **Zero-Dependency:** Runs on vanilla Python 3.x using only core libraries (`sys`, `os`, `time`, `random`).
+- **Cross-Platform:** Native Windows support (PowerShell/CMD) using standard ANSI virtual terminal sequences, as well as Linux/macOS.
+- **Instant Controls:** Frame-decoupled input system ensures the paddle moves without any artificial latency.
+- **Retro Graphics:** Multi-colored brick layers (Red, Green, Yellow) built entirely out of text characters.
+
+## Installation & Running
+
+1. **Copy the script:** Save the game code into a file named `breakout.py`.
+2. **Run the game:** Open your preferred terminal emulator, navigate to the directory where the file is saved, and execute:
    ```bash
    python breakout.py
    ```
    *(On some systems, you might need to use `python3 breakout.py`)*
 
-## Controls
+## Game Controls
 
-* **Move Left:** `A` or `Left Arrow Key`
-* **Move Right:** `D` or `Right Arrow Key`
-* **Restart Game:** `R` (When Game Over or Victory)
-* **Quit Game:** `Q`
+- **A** or **Left Arrow Key**: Move paddle left (instant feedback)
+- **D** or **Right Arrow Key**: Move paddle right (instant feedback)
+- **R**: Restart the game (available on *Game Over* or *Victory* screens)
+- **Q**: Instantly close and quit the game back to the terminal prompt
 
-## Windows Note
-If you are running this on **Windows**, the native terminal does not include the `curses` module by default. To make it work seamlessly without installing standard pip dependencies, run it inside the **Git Bash** terminal or **WSL (Windows Subsystem for Linux)**.
+## Terminal Settings Note
+Before launching the script, please make sure your terminal window is scaled up to at least **80 columns by 25 rows** so the boundaries layout, score tracker, and retro frame buffer display correctly without text wrapping.
